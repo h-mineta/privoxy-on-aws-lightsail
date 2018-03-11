@@ -1,0 +1,25 @@
+- name: Check kernel version.
+  fail: msg="Kernel {{ ansible_kernel }} is not supported."
+  when: "ansible_kernel | version_compare('3.10', '<')"
+
+- name: Install docker
+  yum:
+    name: docker
+    state: latest
+  when: ansible_os_family == 'RedHat'
+
+- name: Start docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Append ec2-user as docker group
+  user:
+    name: ec2-user
+    groups: docker
+    append: yes
+
+- name: Install docker-py
+  pip:
+    name: docker-py

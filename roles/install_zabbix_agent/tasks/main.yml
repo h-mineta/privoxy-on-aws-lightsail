@@ -1,0 +1,115 @@
+- name: Install zabbix release
+  yum:
+    name: "{{ zabbix_release_url }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Install zabbix-agent
+  yum:
+    name: zabbix-agent
+    state: present
+    update_cache: yes
+  when: ansible_os_family == 'RedHat'
+
+- name: Replace LogFileSize
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^LogFileSize=.*$'
+    replace: 'LogFileSize=10'
+
+- name: Replace DebugLevel
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?DebugLevel=.*$'
+    replace: 'DebugLevel=3'
+
+- name: Replace EnableRemoteCommands
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?EnableRemoteCommands=.*$'
+    replace: 'EnableRemoteCommands=1'
+
+- name: Replace LogRemoteCommands
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?LogRemoteCommands=.*$'
+    replace: 'LogRemoteCommands=1'
+
+- name: Replace Server
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^Server=.*$'
+    replace: 'Server={{ zabbix_server }}'
+
+- name: Replace ServerActive
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^ServerActive=.*$'
+    replace: 'ServerActive=127.0.0.1,{{ zabbix_server }}'
+
+- name: Replace ListenPort
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?ListenPort=.*$'
+    replace: 'ListenPort={{ zabbix_listen_port }}'
+
+- name: Replace Hostname
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^Hostname=.*$'
+    replace: 'Hostname={{ inventory_hostname }}'
+
+- name: Replace StartAgents
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?StartAgents=.*$'
+    replace: 'StartAgents=2'
+
+- name: Replace HostMetadata
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?HostMetadata=.*$'
+    replace: 'HostMetadata={{ zabbix_host_metadata }}'
+
+- name: Replace TLSConnect
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?TLSConnect=.*$'
+    replace: 'TLSConnect=psk'
+
+- name: Replace TLSAccept
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?TLSAccept=.*$'
+    replace: 'TLSAccept=psk'
+
+- name: Replace TLSPSKIdentity
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?TLSPSKIdentity=.*$'
+    replace: 'TLSPSKIdentity={{ zabbix_psk_identity }}'
+
+- name: Replace TLSPSKFile
+  replace :
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^#? ?TLSPSKFile=.*$'
+    replace: 'TLSPSKFile=/etc/zabbix/zabbix_agent.psk'
+
+- name: PSK file status
+  stat: path=/etc/zabbix/zabbix_agent.psk
+  register: file_psk
+
+- name: Copy PSK file
+  copy:
+    src: ./roles/install_zabbix_agent/zabbix_agent_aws.psk
+    dest: /etc/zabbix/zabbix_agent.psk
+    owner: zabbix
+    group: zabbix
+    mode: "0600"
+  when: not file_psk.stat.exists or file_psk.stat.mode != "0600"
+
+- name: Retart and enable zabbix-agent
+  service:
+    name: zabbix-agent
+    state: restarted
+    enabled: yes

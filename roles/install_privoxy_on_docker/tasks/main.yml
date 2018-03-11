@@ -1,0 +1,9 @@
+- name: Start privoxy
+  docker_container:
+    name: privoxy
+    image: splazit/privoxy-alpine:latest
+    state: started
+    pull: true
+    restart_policy: "always"
+    ports:
+      - "{{ proxy_port }}:8118"

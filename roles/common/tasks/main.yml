@@ -1,0 +1,56 @@
+- name: prompt profile status
+  stat: path=/etc/profile.d/prompt_hostname.sh
+  register: file_prompt
+
+- name: Append prompt profile
+  shell: "echo 'export HOSTNAME_ALIAS={{ inventory_hostname }}' > /etc/profile.d/prompt_hostname.sh"
+  when: not file_prompt.stat.exists or file_prompt.stat.mode != "0644"
+
+- name: Modified /etc/bashrc
+  replace :
+    dest: /etc/bashrc
+    regexp: 'PS1=\"\[\\u@\\h \\W'
+    replace: 'PS1="[\\u@\\$HOSTNAME_ALIAS \\W'
+
+- name: Update all security packages, excluding kernel
+  yum:
+    name: '*'
+    state: latest
+    security: yes
+    exclude: kernel*
+  when: ansible_os_family == 'RedHat'
+
+#- name: Install SELinux module
+#  yum:
+#    name: libselinux-python
+#    state: present
+
+#- name: Disable SELinux
+#  selinux:
+#    state: disabled
+#  when: ansible_selinux.config_mode != 'disabled'
+
+- name: Stop and disable unused services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items:
+    - lvm2-lvmetad
+    - lvm2-lvmpolld
+    - lvm2-monitor
+    - mdmonitor
+    - sendmail
+
+- name: Set zone to /etc/sysconfig/clock
+  replace:
+    dest=/etc/sysconfig/clock
+    regexp='^ZONE=.*$'
+    replace='ZONE="{{ system_zone }}"'
+
+- name: Set localtime
+  file:
+    src={{ system_zoneinfo_path }}
+    dest=/etc/localtime
+    state=link
+    force=yes

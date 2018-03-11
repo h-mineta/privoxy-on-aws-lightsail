@@ -1,0 +1,7 @@
+- hosts: privoxy
+  become: true
+  roles:
+    - { role: common, tags: common }
+    - { role: install_zabbix_agent, tags: install_zabbix }
+    - { role: install_docker, tags: install_docker }
+    - { role: install_privoxy_on_docker, tags: install_privoxy }
