@@ -5,7 +5,7 @@
 
 ## Lightsail側
 
-###Lightsail 起動スクリプト
+### Lightsail 起動スクリプト
 
 Lightsail作成時に下記起動スクリプトを実行させる
 - 公開鍵はPC環境に応じてあらかじめ変更
